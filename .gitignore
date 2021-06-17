@@ -1,6 +1,8 @@
 .vscode/*
 logs/
 
+dataset_raw/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
