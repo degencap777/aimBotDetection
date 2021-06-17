@@ -1,3 +1,5 @@
 import tensorflow as tf
-print(tf.reduce_sum(tf.random.normal([1000, 1000])))
-print(tf.__version__)
+from tensorflow import keras
+import matplotlib.pyplot as plt
+import os
+import time
