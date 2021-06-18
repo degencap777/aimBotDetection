@@ -17,8 +17,9 @@ mins = math.floor(secs / 60)
 print("Video length: {0} mins {1} sec {2} ms".format(mins, secs % 60, ms))
 
 # Define the codec and create VideoWriter object
-fourcc = cv2.VideoWriter_fourcc(*'MP4V')
-out = cv2.VideoWriter('output.mp4', fourcc, 20.0, (640,  480))
+fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+# specify last param for greyscale
+out = cv2.VideoWriter('output.mp4', fourcc, 20.0, (640,  480), 0)
 
 while video.isOpened():
   ret, frame = video.read()
@@ -28,6 +29,7 @@ while video.isOpened():
 
   # frame size needs to be equal with output video size
   frame = cv2.resize(frame, (640, 480), interpolation=cv2.INTER_AREA)
+  frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
   out.write(frame)
   cv2.imshow('frame', frame)
