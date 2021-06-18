@@ -16,7 +16,28 @@ secs = math.floor(length / fps)
 mins = math.floor(secs / 60)
 print("Video length: {0} mins {1} sec {2} ms".format(mins, secs % 60, ms))
 
+# Define the codec and create VideoWriter object
+fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+out = cv2.VideoWriter('output.mp4', fourcc, 20.0, (640,  480))
+
+while video.isOpened():
+  ret, frame = video.read()
+  if not ret:
+    print("Can't receive frame (stream end?). Exiting ...")
+    break
+
+  # frame size needs to be equal with output video size
+  frame = cv2.resize(frame, (640, 480), interpolation=cv2.INTER_AREA)
+
+  out.write(frame)
+  cv2.imshow('frame', frame)
+  if cv2.waitKey(1) == ord('q'):
+    break
+
+# Release everything if job is finished
 video.release()
+out.release()
+cv2.destroyAllWindows()
 
 # if os.path.isdir(path):  
 #     print("\nIt is a directory")  
