@@ -3,6 +3,14 @@ import mimetypes
 import os
 import math
 
+# get train data
+# get test data
+# create model
+# load or init model
+# compile the model
+# fit data to model
+# save weights
+
 path = "./dataset_raw/10 Minutes of HACKER USING Aimbot & Wall Hack in Apex Legends Season 9!.mp4"
 video = cv2.VideoCapture(path)
 
