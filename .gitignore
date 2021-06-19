@@ -1,6 +1,7 @@
 .vscode/*
 logs/
 
+dataset/
 dataset_raw/
 
 # Byte-compiled / optimized / DLL files
