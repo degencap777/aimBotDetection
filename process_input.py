@@ -46,6 +46,31 @@ def downsample_frames(clip_name: str, target_file: str, target_fps = 20.0):
   clip.release()
   out.release()
 
+# create a grayscale version of the video
+def toGrayscale(clip_name: str, target_file: str):
+  clip = cv2.VideoCapture(clip_name)
+  fps = clip.get(cv2.CAP_PROP_FPS)
+  length = clip.get(cv2.CAP_PROP_FRAME_COUNT)
+  width  = int(clip.get(cv2.CAP_PROP_FRAME_WIDTH))   # float `width`
+  height = int(clip.get(cv2.CAP_PROP_FRAME_HEIGHT))  # float `height`
+
+  # Define the codec and create VideoWriter object
+  fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+  # specify last param for greyscale
+  out = cv2.VideoWriter(target_file, fourcc, fps, (width,  height), 0)
+
+  while clip.isOpened():
+    ret, frame = clip.read()
+    if not ret:
+      print("Can't receive frame (stream end?). Exiting ...")
+      break
+    
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    out.write(frame)
+
+  clip.release()
+  out.release()
+
 # input dir path
 input_dataset_path = "./dataset/"
 # output dir path
@@ -65,8 +90,13 @@ if len(os.listdir(output_path)) > 0:
   raise FileExistsError("Provide a clean output directory")
 
 os.mkdir(output_path + "/test")
-for clip in test_cheater_clips:
-  downsample_frames("{0}cheating/{1}".format(input_dataset_path, clip), output_path + "/test/cheating" + clip)
+for clip in test_cheater_clips[0:4]:
+  new_clip = output_path + "/test/cheating" + clip
+  downsample_frames("{0}cheating/{1}".format(input_dataset_path, clip), new_clip)
+  grayscale_clip = "{0}/test/cheating/{1}-gray{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
+  toGrayscale(new_clip, grayscale_clip)
+  # resize(new_clip, (89, 89), "target_file-context.mp4")
+  # crop(new_clip, (89, 89), "target_file-fovea.mp4")
 
 for clip in test_not_cheater_clips:
   downsample_frames("{0}not_cheating/very-good-players/{1}".format(input_dataset_path, clip), output_path + "/test/not-cheating" + clip)
