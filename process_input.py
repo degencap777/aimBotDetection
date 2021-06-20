@@ -48,15 +48,17 @@ import random
 #       ))
 
 # remove frames to get an fps of 20
-def downsample_frames(clip_name: str, target_fps = 20):
+def downsample_frames(clip_name: str, target_fps = 20.0):
   clip = cv2.VideoCapture(clip_name)
   fps = clip.get(cv2.CAP_PROP_FPS)
   length = clip.get(cv2.CAP_PROP_FRAME_COUNT)
+  width  = int(clip.get(cv2.CAP_PROP_FRAME_WIDTH))   # float `width`
+  height = int(clip.get(cv2.CAP_PROP_FRAME_HEIGHT))  # float `height`
 
   # Define the codec and create VideoWriter object
   fourcc = cv2.VideoWriter_fourcc(*'mp4v')
   # specify last param for greyscale
-  out = cv2.VideoWriter('output.mp4', fourcc, target_fps, (640,  480), 0)
+  out = cv2.VideoWriter('output.mp4', fourcc, target_fps, (width,  height))
 
   frame_count = 0
   while clip.isOpened():
@@ -68,14 +70,16 @@ def downsample_frames(clip_name: str, target_fps = 20):
     if length < fps:
       out.write(frame)
     else:
-      if fps == 30 and frame_count % 3 == 2:
+      if fps < 31 and frame_count % 3 == 2:
         out.write(frame)
-      if fps == 60 and frame_count % 2 == 1:
+      elif fps < 61 and frame_count % 2 == 1:
         out.write(frame)
     frame_count += 1
 
   clip.release()
   out.release()
+
+downsample_frames("dataset/cheating/cheater101.mp4")
 
 # convert frames to grayscale
 # context stream: downsize frames to 89 x 89
