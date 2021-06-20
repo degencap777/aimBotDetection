@@ -14,41 +14,8 @@ import random
 # mins = math.floor(secs / 60)
 # print("Video length: {0} mins {1} sec {2} ms".format(mins, secs % 60, ms))
 
-
-# input dir path
-# input_dataset_path = "./dataset/"
-# # output dir path
-# output_path = "./dataset_processed"
-# # traverse the input dir
-# cheater_clips = os.listdir(input_dataset_path + "cheating")
-# not_cheater_clips = os.listdir(input_dataset_path + "not_cheating")
-# # randomly select test data
-# cheater_percentage = len(cheater_clips) * 20 / 100
-# test_cheater_clips = random.sample(cheater_clips, math.floor(cheater_percentage))
-# not_cheater_percentage = len(not_cheater_clips) * 20 / 100
-# test_not_cheater_clips = random.sample(not_cheater_clips, math.floor(not_cheater_percentage))
-# # create output dir or throw error if already exists
-# if os.path.exists(output_path) is False:
-#   os.mkdir(output_path)
-# if len(os.listdir(output_path)) > 0:
-#   raise FileExistsError("Provide a clean output directory")
-
-# os.mkdir(output_path + "/test")
-# for clip in test_cheater_clips:
-#   shutil.copyfile("{0}cheating/{1}".format(input_dataset_path, clip), output_path + "/test/" + clip)
-
-# for clip in test_not_cheater_clips:
-#   shutil.copyfile("{0}not_cheating/very-good-players/{1}".format(input_dataset_path, clip), output_path + "/test/" + clip)
-
-# print("Create test dataset with {0} clips with cheaters and {1} clips with players. Total: {2}"
-#       .format(
-#         len(test_cheater_clips),
-#         len(test_not_cheater_clips),
-#         len(test_cheater_clips) + len(test_not_cheater_clips)
-#       ))
-
 # remove frames to get an fps of 20
-def downsample_frames(clip_name: str, target_fps = 20.0):
+def downsample_frames(clip_name: str, target_file: str, target_fps = 20.0):
   clip = cv2.VideoCapture(clip_name)
   fps = clip.get(cv2.CAP_PROP_FPS)
   length = clip.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -79,7 +46,37 @@ def downsample_frames(clip_name: str, target_fps = 20.0):
   clip.release()
   out.release()
 
-downsample_frames("dataset/cheating/cheater101.mp4")
+# input dir path
+input_dataset_path = "./dataset/"
+# output dir path
+output_path = "./dataset_processed"
+# traverse the input dir
+cheater_clips = os.listdir(input_dataset_path + "cheating")
+not_cheater_clips = os.listdir(input_dataset_path + "not_cheating")
+# randomly select test data
+cheater_percentage = len(cheater_clips) * 20 / 100
+test_cheater_clips = random.sample(cheater_clips, math.floor(cheater_percentage))
+not_cheater_percentage = len(not_cheater_clips) * 20 / 100
+test_not_cheater_clips = random.sample(not_cheater_clips, math.floor(not_cheater_percentage))
+# create output dir or throw error if already exists
+if os.path.exists(output_path) is False:
+  os.mkdir(output_path)
+if len(os.listdir(output_path)) > 0:
+  raise FileExistsError("Provide a clean output directory")
+
+os.mkdir(output_path + "/test")
+for clip in test_cheater_clips:
+  downsample_frames("{0}cheating/{1}".format(input_dataset_path, clip), output_path + "/test/cheating" + clip)
+
+for clip in test_not_cheater_clips:
+  downsample_frames("{0}not_cheating/very-good-players/{1}".format(input_dataset_path, clip), output_path + "/test/not-cheating" + clip)
+
+print("Create test dataset with {0} clips with cheaters and {1} clips with players. Total: {2}"
+      .format(
+        len(test_cheater_clips),
+        len(test_not_cheater_clips),
+        len(test_cheater_clips) + len(test_not_cheater_clips)
+      ))
 
 # convert frames to grayscale
 # context stream: downsize frames to 89 x 89
