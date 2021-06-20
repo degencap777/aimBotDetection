@@ -25,7 +25,7 @@ def downsample_frames(clip_name: str, target_file: str, target_fps = 20.0):
   # Define the codec and create VideoWriter object
   fourcc = cv2.VideoWriter_fourcc(*'mp4v')
   # specify last param for greyscale
-  out = cv2.VideoWriter('output.mp4', fourcc, target_fps, (width,  height))
+  out = cv2.VideoWriter(target_file, fourcc, target_fps, (width,  height))
 
   frame_count = 0
   while clip.isOpened():
