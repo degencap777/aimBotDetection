@@ -77,7 +77,7 @@ input_dataset_path = "./dataset/"
 output_path = "./dataset_processed"
 # traverse the input dir
 cheater_clips = os.listdir(input_dataset_path + "cheating")
-not_cheater_clips = os.listdir(input_dataset_path + "not_cheating")
+not_cheater_clips = os.listdir(input_dataset_path + "not_cheating/very-good-players")
 # randomly select test data
 cheater_percentage = len(cheater_clips) * 20 / 100
 test_cheater_clips = random.sample(cheater_clips, math.floor(cheater_percentage))
@@ -91,15 +91,15 @@ if len(os.listdir(output_path)) > 0:
 
 os.mkdir(output_path + "/test")
 for clip in test_cheater_clips[0:4]:
-  new_clip = output_path + "/test/cheating" + clip
+  new_clip = output_path + "/test/" + clip
   downsample_frames("{0}cheating/{1}".format(input_dataset_path, clip), new_clip)
-  grayscale_clip = "{0}/test/cheating/{1}-gray{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
+  grayscale_clip = "{0}/test/{1}-gray.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
   toGrayscale(new_clip, grayscale_clip)
   # resize(new_clip, (89, 89), "target_file-context.mp4")
   # crop(new_clip, (89, 89), "target_file-fovea.mp4")
 
-for clip in test_not_cheater_clips:
-  downsample_frames("{0}not_cheating/very-good-players/{1}".format(input_dataset_path, clip), output_path + "/test/not-cheating" + clip)
+for clip in test_not_cheater_clips[0:4]:
+  downsample_frames("{0}not_cheating/very-good-players/{1}".format(input_dataset_path, clip), output_path + "/test/" + clip)
 
 print("Create test dataset with {0} clips with cheaters and {1} clips with players. Total: {2}"
       .format(
