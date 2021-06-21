@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import List, Tuple
 import cv2
 import os
 import math
@@ -124,44 +124,36 @@ cheater_percentage = len(cheater_clips) * 20 / 100
 test_cheater_clips = random.sample(cheater_clips, math.floor(cheater_percentage))
 not_cheater_percentage = len(not_cheater_clips) * 20 / 100
 test_not_cheater_clips = random.sample(not_cheater_clips, math.floor(not_cheater_percentage))
+
+train_cheater_clips = [clip for clip in cheater_clips if clip not in test_cheater_clips]
+train_not_cheater_clips = [clip for clip in not_cheater_clips if clip not in test_not_cheater_clips]
+
 # create output dir or throw error if already exists
 if os.path.exists(output_path) is False:
   os.mkdir(output_path)
 if len(os.listdir(output_path)) > 0:
   raise FileExistsError("Provide a clean output directory")
 
-os.mkdir(output_path + "/test")
-for index, clip in enumerate(test_cheater_clips):
-  print("Test Cheaters video: {0}/{1}".format(index, len(test_cheater_clips)))
-  new_clip = output_path + "/test/" + clip
-  downsample_frames("{0}cheating/{1}".format(input_dataset_path, clip), new_clip)
-  crop_center_clip = "{0}/test/{1}-center.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
-  crop(new_clip, (500, 500), crop_center_clip)
-  grayscale_clip = "{0}/test/{1}-gray.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
-  toGrayscale(crop_center_clip, grayscale_clip)
-  context_clip = "{0}/test/{1}-context.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
-  resize(grayscale_clip, (89, 89), context_clip)
-  fovea_clip = "{0}/test/{1}-fovea.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
-  crop(grayscale_clip, (89, 89), fovea_clip)
-  os.remove(new_clip)
-  os.remove(crop_center_clip)
-  os.remove(grayscale_clip)
+def process_input(input_path, out_path, clips: List[str]):
+  for index, clip in enumerate(clips):
+    print("{0} video: {1}/{2}".format(clip, index + 1, len(clips)))
+    new_clip = out_path + clip
+    downsample_frames("{0}{1}".format(input_path, clip), new_clip)
+    crop_center_clip = "{0}{1}-center.{2}".format(out_path, clip.split(".")[0], clip.split(".")[1])
+    crop(new_clip, (500, 500), crop_center_clip)
+    grayscale_clip = "{0}{1}-gray.{2}".format(out_path, clip.split(".")[0], clip.split(".")[1])
+    toGrayscale(crop_center_clip, grayscale_clip)
+    context_clip = "{0}{1}-context.{2}".format(out_path, clip.split(".")[0], clip.split(".")[1])
+    resize(grayscale_clip, (89, 89), context_clip)
+    fovea_clip = "{0}{1}-fovea.{2}".format(out_path, clip.split(".")[0], clip.split(".")[1])
+    crop(grayscale_clip, (89, 89), fovea_clip)
+    os.remove(new_clip)
+    os.remove(crop_center_clip)
+    os.remove(grayscale_clip)
 
-for clip in test_not_cheater_clips:
-  print("Test Not Cheaters video: {0}/{1}".format(index, len(test_not_cheater_clips)))
-  new_clip = output_path + "/test/" + clip
-  downsample_frames("{0}not_cheating/very-good-players/{1}".format(input_dataset_path, clip), new_clip)
-  crop_center_clip = "{0}/test/{1}-center.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
-  crop(new_clip, (500, 500), crop_center_clip)
-  grayscale_clip = "{0}/test/{1}-gray.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
-  toGrayscale(crop_center_clip, grayscale_clip)
-  context_clip = "{0}/test/{1}-context.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
-  resize(grayscale_clip, (89, 89), context_clip)
-  fovea_clip = "{0}/test/{1}-fovea.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
-  crop(grayscale_clip, (89, 89), fovea_clip)
-  os.remove(new_clip)
-  os.remove(crop_center_clip)
-  os.remove(grayscale_clip)
+os.mkdir(output_path + "/test")
+process_input(input_dataset_path + "cheating/", output_path + "/test/", test_cheater_clips)
+process_input(input_dataset_path + "not_cheating/very-good-players/", output_path + "/test/", test_not_cheater_clips)
 
 print("Create test dataset with {0} clips with cheaters and {1} clips with players. Total: {2}"
       .format(
@@ -170,6 +162,15 @@ print("Create test dataset with {0} clips with cheaters and {1} clips with playe
         len(test_cheater_clips) + len(test_not_cheater_clips)
       ))
 
-os.mkdir(output_path + "/test")
+os.mkdir(output_path + "/train")
+process_input(input_dataset_path + "cheating/", output_path + "/train/", train_cheater_clips)
+process_input(input_dataset_path + "not_cheating/very-good-players/", output_path + "/train/", train_not_cheater_clips)
+
+print("Create train dataset with {0} clips with cheaters and {1} clips with players. Total: {2}"
+      .format(
+        len(train_cheater_clips),
+        len(train_not_cheater_clips),
+        len(train_cheater_clips) + len(train_not_cheater_clips)
+      ))
 
 # augument the dataset by flipping all data
