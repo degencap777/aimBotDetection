@@ -1,8 +1,3 @@
-import cv2
-import mimetypes
-import os
-import math
-
 # get train data
 # get test data
 # create model
@@ -11,46 +6,114 @@ import math
 # fit data to model
 # save weights
 
-path = "./dataset_raw/10 Minutes of HACKER USING Aimbot & Wall Hack in Apex Legends Season 9!.mp4"
-video = cv2.VideoCapture(path)
+'''
+  A simple Conv3D example with Keras
+'''
+import os
+import cv2
+from tensorflow import keras
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Flatten, Conv3D, MaxPooling3D, Dropout
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.utils import plot_model
+import numpy as np
+import matplotlib.pyplot as plt
 
-fps = video.get(cv2.CAP_PROP_FPS)
-length = video.get(cv2.CAP_PROP_FRAME_COUNT)
+def video_to_array(video_name: str, no_frames=10):
+  array_video = []
+  clip = cv2.VideoCapture(video_name)
+  nframe = clip.get(cv2.CAP_PROP_FRAME_COUNT)
+  frames = [x * nframe / no_frames for x in range(no_frames)]
 
-print("Frames per second using video.get(cv2.CAP_PROP_FPS) : {0}".format(fps))
-print("Video length in frames: {0}".format(length))
-ms = length % fps
-secs = math.floor(length / fps)
-mins = math.floor(secs / 60)
-print("Video length: {0} mins {1} sec {2} ms".format(mins, secs % 60, ms))
+  for i in range(no_frames):
+    clip.set(cv2.CAP_PROP_POS_FRAMES, frames[i])
+    ret, frame = clip.read()
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    array_video.append(frame)
 
-# Define the codec and create VideoWriter object
-fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-# specify last param for greyscale
-out = cv2.VideoWriter('output.mp4', fourcc, 20.0, (640,  480), 0)
+  clip.release()
 
-while video.isOpened():
-  ret, frame = video.read()
-  if not ret:
-    print("Can't receive frame (stream end?). Exiting ...")
-    break
+  return np.array(array_video)
 
-  # frame size needs to be equal with output video size
-  frame = cv2.resize(frame, (640, 480), interpolation=cv2.INTER_AREA)
-  frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+# -- Preparatory code --
+# Model configuration
+batch_size = 10
+no_epochs = 1
+learning_rate = 0.001
+no_classes = 2
+validation_split = 0.2
+verbosity = 1
 
-  out.write(frame)
-  cv2.imshow('frame', frame)
-  if cv2.waitKey(1) == ord('q'):
-    break
+X_train = []
+labels_train = []
+train_files = os.listdir("dataset_processed/train/")
 
-# Release everything if job is finished
-video.release()
-out.release()
-cv2.destroyAllWindows()
+for filename in train_files[:10]:
+  file_path = os.path.join("dataset_processed/train/", filename)
+  label = 1 if filename.startswith("cheater") else 0
 
-# if os.path.isdir(path):  
-#     print("\nIt is a directory")  
-# elif os.path.isfile(path):
-#   file_type, other = mimetypes.guess_type(path)
-#   print("File type is {0}".format(file_type))
+  labels_train.append(label)
+  X_train.append(video_to_array(file_path))
+
+print(np.array(X_train).shape)
+X_train = np.array(X_train).transpose((0, 2, 3, 1))
+print(X_train.shape)
+# X_train = X_train.reshape((X_train.shape[0], 89, 89, 10, 1))
+X_train = X_train.astype("float32")
+Y_train = to_categorical(labels_train, 2)
+
+print('X_shape:{}\nY_shape:{}'.format(X_train.shape, Y_train.shape))
+
+test_data = os.listdir("dataset_processed/test/")
+test_data = [clip for clip in test_data if clip.endswith("-fovea.mp4")]
+test_data = test_data[:19]
+test_targets = [1 if video.startswith("cheater") else 0 for video in test_data]
+test_data = [video_to_array("dataset_processed/test/" + video) for video in test_data]
+
+
+# Create the model
+model = Sequential()
+model.add(Conv3D(89, kernel_size=(3, 3, 3), activation='relu', kernel_initializer='he_uniform',
+  input_shape=(X_train.shape), padding="same"))
+model.add(Conv3D(89, kernel_size=(3, 3, 3), activation='softmax', padding="same"))
+model.add(MaxPooling3D(pool_size=(3, 3, 3), padding="same"))
+model.add(Dropout(0.25))
+
+model.add(Conv3D(356, kernel_size=(3, 3, 3), activation='relu', padding="same"))
+model.add(Conv3D(356, kernel_size=(3, 3, 3), activation='softmax', padding="same"))
+model.add(MaxPooling3D(pool_size=(3, 3, 3), padding="same"))
+model.add(Dropout(0.25))
+
+model.add(Flatten())
+model.add(Dense(1424, activation='sigmoid'))
+model.add(Dropout(0.5))
+model.add(Dense(no_classes, activation='softmax'))
+
+# Compile the model
+model.compile(loss=keras.losses.categorical_crossentropy,
+              optimizer=keras.optimizers.Adam(learning_rate=learning_rate),
+              metrics=['accuracy'])
+model.summary()
+plot_model(model, show_shapes=True,
+            to_file=os.path.join('model.png'))
+# Fit data to model
+# history = model.fit(X_train, targets_train,
+#             batch_size=batch_size,
+#             epochs=no_epochs,
+#             verbose=verbosity,
+#             validation_split=validation_split)
+
+# # Generate generalization metrics
+# score = model.evaluate(X_test, targets_test, verbose=0)
+# print(f'Test loss: {score[0]} / Test accuracy: {score[1]}')
+
+# # Plot history: Categorical crossentropy & Accuracy
+# plt.plot(history.history['loss'], label='Categorical crossentropy (training data)')
+# plt.plot(history.history['val_loss'], label='Categorical crossentropy (validation data)')
+# plt.plot(history.history['accuracy'], label='Accuracy (training data)')
+# plt.plot(history.history['val_accuracy'], label='Accuracy (validation data)')
+# plt.title('Model performance for 3D MNIST Keras Conv3D example')
+# plt.ylabel('Loss value')
+# plt.xlabel('No. epoch')
+# plt.legend(loc="upper left")
+# plt.show()
