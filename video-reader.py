@@ -2,10 +2,12 @@ import sys
 import cv2
 
 if __name__ == "__main__":
-  video_name = sys.argv[1]
-  delay = sys.argv[2] if sys.argv[2] else 500
-  if not video_name:
+  if len(sys.argv) <= 1:
     raise ValueError("Please provide a video path as first arg!")
+  video_name = sys.argv[1]
+  delay = 500
+  if len(sys.argv) >= 3:
+    delay = sys.argv[2]
 
   clip = cv2.VideoCapture(video_name)
   fps = clip.get(cv2.CAP_PROP_FPS)
