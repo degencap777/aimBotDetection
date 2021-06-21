@@ -4,15 +4,6 @@ import os
 import math
 import random
 
-# video = cv2.VideoCapture(path)
-
-# print("Frames per second using video.get(cv2.CAP_PROP_FPS) : {0}".format(fps))
-# print("Video length in frames: {0}".format(length))
-# ms = length % fps
-# secs = math.floor(length / fps)
-# mins = math.floor(secs / 60)
-# print("Video length: {0} mins {1} sec {2} ms".format(mins, secs % 60, ms))
-
 # remove frames to get an fps of 20
 def downsample_frames(clip_name: str, target_file: str, target_fps = 20.0):
   clip = cv2.VideoCapture(clip_name)
@@ -151,6 +142,9 @@ for clip in test_cheater_clips[0:2]:
   resize(grayscale_clip, (89, 89), context_clip)
   fovea_clip = "{0}/test/{1}-fovea.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
   crop(grayscale_clip, (89, 89), fovea_clip)
+  os.remove(new_clip)
+  os.remove(crop_center_clip)
+  os.remove(grayscale_clip)
 
 for clip in test_not_cheater_clips[0:4]:
   downsample_frames("{0}not_cheating/very-good-players/{1}".format(input_dataset_path, clip), output_path + "/test/" + clip)
@@ -162,36 +156,4 @@ print("Create test dataset with {0} clips with cheaters and {1} clips with playe
         len(test_cheater_clips) + len(test_not_cheater_clips)
       ))
 
-# convert frames to grayscale
-# context stream: downsize frames to 89 x 89
-# output file: name-context.mp4
-# fovea stream: extract center of 89 x 89
-# output file: name-fovea.mp4
 # augument the dataset by flipping all data
-
-
-# while video.isOpened():
-#   ret, frame = video.read()
-#   if not ret:
-#     print("Can't receive frame (stream end?). Exiting ...")
-#     break
-
-#   # frame size needs to be equal with output video size
-#   frame = cv2.resize(frame, (640, 480), interpolation=cv2.INTER_AREA)
-#   frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-#   out.write(frame)
-#   cv2.imshow('frame', frame)
-#   if cv2.waitKey(1) == ord('q'):
-#     break
-
-# Release everything if job is finished
-# video.release()
-# out.release()
-# cv2.destroyAllWindows()
-
-# if os.path.isdir(path):  
-#     print("\nIt is a directory")  
-# elif os.path.isfile(path):
-#   file_type, other = mimetypes.guess_type(path)
-#   print("File type is {0}".format(file_type))
