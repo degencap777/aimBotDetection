@@ -21,7 +21,7 @@ def downsample_frames(clip_name: str, target_file: str, target_fps = 20.0):
   while clip.isOpened():
     ret, frame = clip.read()
     if not ret:
-      print("Can't receive frame (stream end?). Exiting ...")
+      # print("Can't receive frame (stream end?). Exiting ...")
       break
 
     if length < fps:
@@ -52,7 +52,7 @@ def toGrayscale(clip_name: str, target_file: str):
   while clip.isOpened():
     ret, frame = clip.read()
     if not ret:
-      print("Can't receive frame (stream end?). Exiting ...")
+      # print("Can't receive frame (stream end?). Exiting ...")
       break
     
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -74,7 +74,7 @@ def resize(clip_name: str, size: Tuple[int], target_file: str):
   while clip.isOpened():
     ret, frame = clip.read()
     if not ret:
-      print("Can't receive frame (stream end?). Exiting ...")
+      # print("Can't receive frame (stream end?). Exiting ...")
       break
     
     frame = cv2.resize(frame, size, interpolation=cv2.INTER_AREA)
@@ -98,7 +98,7 @@ def crop(clip_name: str, size: Tuple[int], target_file: str):
   while clip.isOpened():
     ret, frame = clip.read()
     if not ret:
-      print("Can't receive frame (stream end?). Exiting ...")
+      # print("Can't receive frame (stream end?). Exiting ...")
       break
     
     frame_height, frame_width = frame.shape[0], frame.shape[1]
@@ -131,7 +131,8 @@ if len(os.listdir(output_path)) > 0:
   raise FileExistsError("Provide a clean output directory")
 
 os.mkdir(output_path + "/test")
-for clip in test_cheater_clips[0:2]:
+for index, clip in enumerate(test_cheater_clips):
+  print("Test Cheaters video: {0}/{1}".format(index, len(test_cheater_clips)))
   new_clip = output_path + "/test/" + clip
   downsample_frames("{0}cheating/{1}".format(input_dataset_path, clip), new_clip)
   crop_center_clip = "{0}/test/{1}-center.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
@@ -146,8 +147,21 @@ for clip in test_cheater_clips[0:2]:
   os.remove(crop_center_clip)
   os.remove(grayscale_clip)
 
-for clip in test_not_cheater_clips[0:4]:
-  downsample_frames("{0}not_cheating/very-good-players/{1}".format(input_dataset_path, clip), output_path + "/test/" + clip)
+for clip in test_not_cheater_clips:
+  print("Test Not Cheaters video: {0}/{1}".format(index, len(test_not_cheater_clips)))
+  new_clip = output_path + "/test/" + clip
+  downsample_frames("{0}not_cheating/very-good-players/{1}".format(input_dataset_path, clip), new_clip)
+  crop_center_clip = "{0}/test/{1}-center.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
+  crop(new_clip, (500, 500), crop_center_clip)
+  grayscale_clip = "{0}/test/{1}-gray.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
+  toGrayscale(crop_center_clip, grayscale_clip)
+  context_clip = "{0}/test/{1}-context.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
+  resize(grayscale_clip, (89, 89), context_clip)
+  fovea_clip = "{0}/test/{1}-fovea.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
+  crop(grayscale_clip, (89, 89), fovea_clip)
+  os.remove(new_clip)
+  os.remove(crop_center_clip)
+  os.remove(grayscale_clip)
 
 print("Create test dataset with {0} clips with cheaters and {1} clips with players. Total: {2}"
       .format(
@@ -155,5 +169,7 @@ print("Create test dataset with {0} clips with cheaters and {1} clips with playe
         len(test_not_cheater_clips),
         len(test_cheater_clips) + len(test_not_cheater_clips)
       ))
+
+os.mkdir(output_path + "/test")
 
 # augument the dataset by flipping all data
