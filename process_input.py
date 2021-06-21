@@ -1,7 +1,6 @@
+from typing import Tuple
 import cv2
-import mimetypes
 import os
-import shutil
 import math
 import random
 
@@ -71,6 +70,57 @@ def toGrayscale(clip_name: str, target_file: str):
   clip.release()
   out.release()
 
+# create context stream
+def resize(clip_name: str, size: Tuple[int], target_file: str):
+  clip = cv2.VideoCapture(clip_name)
+  fps = clip.get(cv2.CAP_PROP_FPS)
+
+  # Define the codec and create VideoWriter object
+  fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+  # specify last param for greyscale
+  out = cv2.VideoWriter(target_file, fourcc, fps, size)
+
+  while clip.isOpened():
+    ret, frame = clip.read()
+    if not ret:
+      print("Can't receive frame (stream end?). Exiting ...")
+      break
+    
+    frame = cv2.resize(frame, size, interpolation=cv2.INTER_AREA)
+    out.write(frame)
+
+  clip.release()
+  out.release()
+
+# create fovea stream
+def crop(clip_name: str, size: Tuple[int], target_file: str):
+  clip = cv2.VideoCapture(clip_name)
+  fps = clip.get(cv2.CAP_PROP_FPS)
+  width = size[0]
+  height = size[1]
+
+  # Define the codec and create VideoWriter object
+  fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+  # specify last param for greyscale
+  out = cv2.VideoWriter(target_file, fourcc, fps, size)
+
+  while clip.isOpened():
+    ret, frame = clip.read()
+    if not ret:
+      print("Can't receive frame (stream end?). Exiting ...")
+      break
+    
+    frame_height, frame_width = frame.shape[0], frame.shape[1]
+    crop_width = width if width < frame_width else frame_width
+    crop_height = height if height < frame_height else frame_height
+    mid_x, mid_y = int(frame_width/2), int(frame_height/2)
+    cw2, ch2 = int(crop_width/2), int(crop_height/2) 
+    frame = frame[mid_y-ch2:mid_y+ch2, mid_x-cw2:mid_x+cw2]
+    out.write(frame)
+
+  clip.release()
+  out.release()
+
 # input dir path
 input_dataset_path = "./dataset/"
 # output dir path
@@ -90,13 +140,16 @@ if len(os.listdir(output_path)) > 0:
   raise FileExistsError("Provide a clean output directory")
 
 os.mkdir(output_path + "/test")
-for clip in test_cheater_clips[0:4]:
+for clip in test_cheater_clips[0:2]:
   new_clip = output_path + "/test/" + clip
-  downsample_frames("{0}cheating/{1}".format(input_dataset_path, clip), new_clip)
-  grayscale_clip = "{0}/test/{1}-gray.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
-  toGrayscale(new_clip, grayscale_clip)
-  # resize(new_clip, (89, 89), "target_file-context.mp4")
-  # crop(new_clip, (89, 89), "target_file-fovea.mp4")
+  # downsample_frames("{0}cheating/{1}".format(input_dataset_path, clip), new_clip)
+  # grayscale_clip = "{0}/test/{1}-gray.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
+  # toGrayscale(new_clip, grayscale_clip)
+  # context_clip = "{0}/test/{1}-context.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
+  # resize(grayscale_clip, (89, 89), context_clip)
+  fovea_clip = "{0}/test/{1}-fovea.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
+  # crop(grayscale_clip, (144, 144), fovea_clip)
+  crop("{0}cheating/{1}".format(input_dataset_path, clip), (500, 500), fovea_clip)
 
 for clip in test_not_cheater_clips[0:4]:
   downsample_frames("{0}not_cheating/very-good-players/{1}".format(input_dataset_path, clip), output_path + "/test/" + clip)
