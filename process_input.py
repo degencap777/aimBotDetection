@@ -142,14 +142,15 @@ if len(os.listdir(output_path)) > 0:
 os.mkdir(output_path + "/test")
 for clip in test_cheater_clips[0:2]:
   new_clip = output_path + "/test/" + clip
-  # downsample_frames("{0}cheating/{1}".format(input_dataset_path, clip), new_clip)
-  # grayscale_clip = "{0}/test/{1}-gray.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
-  # toGrayscale(new_clip, grayscale_clip)
-  # context_clip = "{0}/test/{1}-context.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
-  # resize(grayscale_clip, (89, 89), context_clip)
+  downsample_frames("{0}cheating/{1}".format(input_dataset_path, clip), new_clip)
+  crop_center_clip = "{0}/test/{1}-center.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
+  crop(new_clip, (500, 500), crop_center_clip)
+  grayscale_clip = "{0}/test/{1}-gray.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
+  toGrayscale(crop_center_clip, grayscale_clip)
+  context_clip = "{0}/test/{1}-context.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
+  resize(grayscale_clip, (89, 89), context_clip)
   fovea_clip = "{0}/test/{1}-fovea.{2}".format(output_path, clip.split(".")[0], clip.split(".")[1])
-  # crop(grayscale_clip, (144, 144), fovea_clip)
-  crop("{0}cheating/{1}".format(input_dataset_path, clip), (500, 500), fovea_clip)
+  crop(grayscale_clip, (89, 89), fovea_clip)
 
 for clip in test_not_cheater_clips[0:4]:
   downsample_frames("{0}not_cheating/very-good-players/{1}".format(input_dataset_path, clip), output_path + "/test/" + clip)
