@@ -18,6 +18,7 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.utils import plot_model
 import numpy as np
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 def video_to_array(video_name: str, no_frames=10):
   array_video = []
@@ -28,6 +29,7 @@ def video_to_array(video_name: str, no_frames=10):
   for i in range(no_frames):
     clip.set(cv2.CAP_PROP_POS_FRAMES, frames[i])
     ret, frame = clip.read()
+    frame = cv2.resize(frame, (32, 32))
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     array_video.append(frame)
 
@@ -48,27 +50,32 @@ X_train = []
 labels_train = []
 train_files = os.listdir("dataset_processed/train/")
 
-for filename in train_files[:10]:
+progress_bar = tqdm(total=len(train_files))
+
+for filename in train_files:
+  progress_bar.update(1)
+  if filename.endswith("-context.mp4"):
+    continue
   file_path = os.path.join("dataset_processed/train/", filename)
   label = 1 if filename.startswith("cheater") else 0
 
   labels_train.append(label)
   X_train.append(video_to_array(file_path))
 
-print(np.array(X_train).shape)
+progress_bar.close()
+
 X_train = np.array(X_train).transpose((0, 2, 3, 1))
-print(X_train.shape)
-# X_train = X_train.reshape((X_train.shape[0], 89, 89, 10, 1))
+X_train = X_train.reshape((X_train.shape[0], 32, 32, 10, 1))
 X_train = X_train.astype("float32")
 Y_train = to_categorical(labels_train, 2)
 
 print('X_shape:{}\nY_shape:{}'.format(X_train.shape, Y_train.shape))
 
-test_data = os.listdir("dataset_processed/test/")
-test_data = [clip for clip in test_data if clip.endswith("-fovea.mp4")]
-test_data = test_data[:19]
-test_targets = [1 if video.startswith("cheater") else 0 for video in test_data]
-test_data = [video_to_array("dataset_processed/test/" + video) for video in test_data]
+# test_data = os.listdir("dataset_processed/test/")
+# test_data = [clip for clip in test_data if clip.endswith("-fovea.mp4")]
+# test_data = test_data[:19]
+# test_targets = [1 if video.startswith("cheater") else 0 for video in test_data]
+# test_data = [video_to_array("dataset_processed/test/" + video) for video in test_data]
 
 
 # Create the model
