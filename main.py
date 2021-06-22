@@ -71,28 +71,46 @@ Y_train = to_categorical(labels_train, 2)
 
 print('X_shape:{}\nY_shape:{}'.format(X_train.shape, Y_train.shape))
 
-# test_data = os.listdir("dataset_processed/test/")
-# test_data = [clip for clip in test_data if clip.endswith("-fovea.mp4")]
-# test_data = test_data[:19]
-# test_targets = [1 if video.startswith("cheater") else 0 for video in test_data]
-# test_data = [video_to_array("dataset_processed/test/" + video) for video in test_data]
+X_test = []
+labels_test = []
+test_files = os.listdir("dataset_processed/test/")
 
+progress_bar = tqdm(total=len(test_files))
+
+for filename in test_files:
+  progress_bar.update(1)
+  if filename.endswith("-context.mp4"):
+    continue
+  file_path = os.path.join("dataset_processed/test/", filename)
+  label = 1 if filename.startswith("cheater") else 0
+
+  labels_test.append(label)
+  X_test.append(video_to_array(file_path))
+
+progress_bar.close()
+
+X_test = np.array(X_test).transpose((0, 2, 3, 1))
+X_test = X_test.reshape((X_test.shape[0], 32, 32, 10, 1))
+X_test = X_test.astype("float32")
+Y_test = to_categorical(labels_test, 2)
+
+print('X_shape:{}\nY_shape:{}'.format(X_test.shape, Y_test.shape))
 
 # Create the model
 model = Sequential()
-model.add(Conv3D(89, kernel_size=(3, 3, 3), activation='relu', kernel_initializer='he_uniform',
-  input_shape=(X_train.shape), padding="same"))
-model.add(Conv3D(89, kernel_size=(3, 3, 3), activation='softmax', padding="same"))
+model.add(Conv3D(32, kernel_size=(3, 3, 3), activation='relu', kernel_initializer='he_uniform',
+  input_shape=(X_train.shape[1:]), padding="same"))
+model.add(Conv3D(32, kernel_size=(3, 3, 3), activation='softmax', padding="same"))
 model.add(MaxPooling3D(pool_size=(3, 3, 3), padding="same"))
 model.add(Dropout(0.25))
 
-model.add(Conv3D(356, kernel_size=(3, 3, 3), activation='relu', padding="same"))
-model.add(Conv3D(356, kernel_size=(3, 3, 3), activation='softmax', padding="same"))
+model.add(Conv3D(64, kernel_size=(3, 3, 3), activation='relu', padding="same"))
+model.add(Conv3D(64, kernel_size=(3, 3, 3), activation='softmax', padding="same"))
 model.add(MaxPooling3D(pool_size=(3, 3, 3), padding="same"))
 model.add(Dropout(0.25))
 
 model.add(Flatten())
-model.add(Dense(1424, activation='sigmoid'))
+model.add(Dense(512, activation='sigmoid'))
 model.add(Dropout(0.5))
 model.add(Dense(no_classes, activation='softmax'))
 
