@@ -39,7 +39,7 @@ def video_to_array(video_name: str, no_frames=10):
 
 # -- Preparatory code --
 # Model configuration
-batch_size = 10
+batch_size = 50
 no_epochs = 1
 learning_rate = 0.001
 no_classes = 2
@@ -122,11 +122,12 @@ model.summary()
 plot_model(model, show_shapes=True,
             to_file=os.path.join('model.png'))
 # Fit data to model
-# history = model.fit(X_train, targets_train,
-#             batch_size=batch_size,
-#             epochs=no_epochs,
-#             verbose=verbosity,
-#             validation_split=validation_split)
+history = model.fit(X_train, Y_train,
+            validation_data=(X_test, Y_test),
+            batch_size=batch_size,
+            epochs=no_epochs,
+            verbose=verbosity,
+            shuffle=True)
 
 # # Generate generalization metrics
 # score = model.evaluate(X_test, targets_test, verbose=0)
