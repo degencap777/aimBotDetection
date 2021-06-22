@@ -130,8 +130,9 @@ history = model.fit(X_train, Y_train,
             shuffle=True)
 
 # # Generate generalization metrics
-# score = model.evaluate(X_test, targets_test, verbose=0)
-# print(f'Test loss: {score[0]} / Test accuracy: {score[1]}')
+loss, acc = model.evaluate(X_test, Y_test, verbose=0)
+print('Test loss:', loss)
+print('Test accuracy:', acc)
 
 # # Plot history: Categorical crossentropy & Accuracy
 # plt.plot(history.history['loss'], label='Categorical crossentropy (training data)')
