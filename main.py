@@ -39,8 +39,8 @@ def video_to_array(video_name: str, no_frames=10):
 
 # -- Preparatory code --
 # Model configuration
-batch_size = 50
-no_epochs = 1
+batch_size = 100
+no_epochs = 100
 learning_rate = 0.001
 no_classes = 2
 validation_split = 0.2
@@ -139,7 +139,7 @@ plt.plot(history.history['loss'], label='Categorical crossentropy (training data
 plt.plot(history.history['val_loss'], label='Categorical crossentropy (validation data)')
 plt.plot(history.history['accuracy'], label='Accuracy (training data)')
 plt.plot(history.history['val_accuracy'], label='Accuracy (validation data)')
-plt.title('Model performance for 3D MNIST Keras Conv3D example')
+plt.title('Model performance for Conv3D for aimbot detection')
 plt.ylabel('Loss value')
 plt.xlabel('No. epoch')
 plt.legend(loc="upper left")
