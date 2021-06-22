@@ -9,6 +9,8 @@ matplotlib = "*"
 opencv-python = "*"
 numpy = "*"
 pydot = "*"
+scikit-learn = "*"
+tqdm = "*"
 
 [dev-packages]
 
