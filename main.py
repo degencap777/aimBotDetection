@@ -43,6 +43,7 @@ parser = argparse.ArgumentParser(description="A simple Conv3D for aimbot detecti
 parser.add_argument("--output", type=str, required=True)
 parser.add_argument("--test", type=bool, default=False)
 parser.add_argument("--load", type=str, default=False)
+parser.add_argument("--epochs", type=int, default=100)
 args = parser.parse_args()
 
 if args.test is True and not args.load:
@@ -51,7 +52,7 @@ if args.test is True and not args.load:
 # -- Preparatory code --
 # Model configuration
 batch_size = 100
-no_epochs = 1
+no_epochs = args.epochs
 learning_rate = 0.001
 no_classes = 2
 verbosity = 1
