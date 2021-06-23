@@ -49,7 +49,7 @@ if args.test is True and not args.load:
 # Model configuration
 batch_size = 100
 no_epochs = args.epochs
-learning_rate = 0.001
+learning_rate = 0.00001
 no_classes = 2
 verbosity = 1
 
@@ -125,24 +125,22 @@ input_shape = X_train_context.shape[1:] if len(X_train_context) else X_test_cont
 # Create the model
 # input context stream
 visible1 = Input(shape=input_shape)
-conv11 = Conv3D(32, kernel_size=(3, 3, 3), activation='relu', kernel_initializer='he_uniform')(visible1)
-pool11 = MaxPooling3D(pool_size=(2, 2, 2), padding="same")(conv11)
-conv12 = Conv3D(32, kernel_size=(3, 3, 3), strides=(2, 2, 2), activation='relu', padding="same")(pool11)
-pool12 = MaxPooling3D(pool_size=(2, 2, 2), padding="same")(conv12)
-conv13 = Conv3D(64, kernel_size=(3, 3, 3), activation='relu', padding="same")(pool12)
-flat1 = Flatten()(conv13)
+conv11 = Conv3D(16, kernel_size=(3, 3, 3), activation='relu', kernel_initializer='he_uniform',
+  padding="same")(visible1)
+pool12 = MaxPooling3D(pool_size=(3, 3, 3), padding="same")(conv11)
+drop1 = Dropout(0.25)(pool12)
+flat1 = Flatten()(drop1)
 # input fovea stream
 visible2 = Input(shape=input_shape)
-conv21 = Conv3D(32, kernel_size=(3, 3, 3), activation='relu', kernel_initializer='he_uniform')(visible2)
-pool21 = MaxPooling3D(pool_size=(2, 2, 2), padding="same")(conv21)
-conv22 = Conv3D(32, kernel_size=(3, 3, 3), strides=(2, 2, 2), activation='relu', padding="same")(pool21)
-pool22 = MaxPooling3D(pool_size=(2, 2, 2), padding="same")(conv22)
-conv23 = Conv3D(64, kernel_size=(3, 3, 3), activation='relu', padding="same")(pool22)
-flat2 = Flatten()(conv23)
+conv21 = Conv3D(16, kernel_size=(3, 3, 3), activation='relu', kernel_initializer='he_uniform',
+  padding="same")(visible2)
+pool22 = MaxPooling3D(pool_size=(3, 3, 3), padding="same")(conv21)
+drop2 = Dropout(0.25)(pool22)
+flat2 = Flatten()(drop2)
 # merge input models
 merge = concatenate([flat1, flat2])
 # interpretation model
-hidden1 = Dense(10, activation='relu')(merge)
+hidden1 = Dense(10, activation='sigmoid')(merge)
 hidden2 = Dense(10, activation='relu')(hidden1)
 output = Dense(no_classes, activation='softmax')(hidden2)
 model = Model(inputs=[visible1, visible2], outputs=output)
