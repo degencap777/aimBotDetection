@@ -56,9 +56,10 @@ learning_rate = 0.001
 no_classes = 2
 verbosity = 1
 
+X_train = []
+labels_train = []
+
 if not args.test:
-  X_train = []
-  labels_train = []
   train_files = os.listdir("dataset_processed/train/")
 
   progress_bar = tqdm(total=len(train_files))
@@ -107,7 +108,7 @@ Y_test = to_categorical(labels_test, 2)
 
 print('X_shape:{}\nY_shape:{}'.format(X_test.shape, Y_test.shape))
 
-input_shape = X_train.shape[1:] if X_train else X_test.shape[1:]
+input_shape = X_train.shape[1:] if len(X_train) else X_test.shape[1:]
 
 # Create the model
 model = Sequential()
