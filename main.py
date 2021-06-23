@@ -41,6 +41,7 @@ def video_to_array(video_name: str, no_frames=10):
 # -- Command line argumests --
 parser = argparse.ArgumentParser(description="A simple Conv3D for aimbot detection")
 parser.add_argument("--output", type=str, required=True)
+parser.add_argument("--test", type=bool, default=False)
 args = parser.parse_args()
 
 # -- Preparatory code --
@@ -141,7 +142,8 @@ print('Test accuracy:', acc)
 
 if not os.path.isdir(args.output):
   os.mkdir(args.output)
-model.save_weights(os.path.join(args.output, "3dcnn-{0}-{1}-acc-{2}.h5".format(batch_size, no_epochs, round(acc, 2))))
+if not args.test:
+  model.save_weights(os.path.join(args.output, "3dcnn-{0}-{1}-acc-{2}.h5".format(batch_size, no_epochs, round(acc, 2))))
 
 # # Plot history: Categorical crossentropy & Accuracy
 plt.plot(history.history['loss'], label='Categorical crossentropy (training data)')
