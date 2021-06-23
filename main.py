@@ -7,8 +7,9 @@
 # save weights
 
 '''
-  A simple Conv3D example with Keras
+  A simple Conv3D with Keras for aimbot detection
 '''
+import argparse
 import os
 import cv2
 from tensorflow import keras
@@ -37,13 +38,17 @@ def video_to_array(video_name: str, no_frames=10):
 
   return np.array(array_video)
 
+# -- Command line argumests --
+parser = argparse.ArgumentParser(description="A simple Conv3D for aimbot detection")
+parser.add_argument("--output", type=str, required=True)
+args = parser.parse_args()
+
 # -- Preparatory code --
 # Model configuration
 batch_size = 100
-no_epochs = 100
+no_epochs = 1
 learning_rate = 0.001
 no_classes = 2
-validation_split = 0.2
 verbosity = 1
 
 X_train = []
@@ -133,6 +138,10 @@ history = model.fit(X_train, Y_train,
 loss, acc = model.evaluate(X_test, Y_test, verbose=0)
 print('Test loss:', loss)
 print('Test accuracy:', acc)
+
+if not os.path.isdir(args.output):
+  os.mkdir(args.output)
+model.save_weights(os.path.join(args.output, "3dcnn-{0}-{1}-acc-{2}.h5".format(batch_size, no_epochs, round(acc, 2))))
 
 # # Plot history: Categorical crossentropy & Accuracy
 plt.plot(history.history['loss'], label='Categorical crossentropy (training data)')
