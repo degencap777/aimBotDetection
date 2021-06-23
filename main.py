@@ -42,7 +42,11 @@ def video_to_array(video_name: str, no_frames=10):
 parser = argparse.ArgumentParser(description="A simple Conv3D for aimbot detection")
 parser.add_argument("--output", type=str, required=True)
 parser.add_argument("--test", type=bool, default=False)
+parser.add_argument("--load", type=str, default=False)
 args = parser.parse_args()
+
+if args.test is True and not args.load:
+  raise ValueError("For a test run you need to provide a file with the weights. Use --load.")
 
 # -- Preparatory code --
 # Model configuration
@@ -127,6 +131,10 @@ model.compile(loss=keras.losses.categorical_crossentropy,
 model.summary()
 plot_model(model, show_shapes=True,
             to_file=os.path.join('model.png'))
+
+# Load weights if provided
+if args.load is not False:
+  model.load_weights(args.load)
 # Fit data to model
 if not args.test:
   history = model.fit(X_train, Y_train,
@@ -146,13 +154,13 @@ if not os.path.isdir(args.output):
 if not args.test:
   model.save_weights(os.path.join(args.output, "3dcnn-{0}-{1}-acc-{2}.h5".format(batch_size, no_epochs, round(acc, 2))))
 
-# # Plot history: Categorical crossentropy & Accuracy
-plt.plot(history.history['loss'], label='Categorical crossentropy (training data)')
-plt.plot(history.history['val_loss'], label='Categorical crossentropy (validation data)')
-plt.plot(history.history['accuracy'], label='Accuracy (training data)')
-plt.plot(history.history['val_accuracy'], label='Accuracy (validation data)')
-plt.title('Model performance for Conv3D for aimbot detection')
-plt.ylabel('Loss value')
-plt.xlabel('No. epoch')
-plt.legend(loc="upper left")
-plt.show()
+  # # Plot history: Categorical crossentropy & Accuracy
+  plt.plot(history.history['loss'], label='Categorical crossentropy (training data)')
+  plt.plot(history.history['val_loss'], label='Categorical crossentropy (validation data)')
+  plt.plot(history.history['accuracy'], label='Accuracy (training data)')
+  plt.plot(history.history['val_accuracy'], label='Accuracy (validation data)')
+  plt.title('Model performance for Conv3D for aimbot detection')
+  plt.ylabel('Loss value')
+  plt.xlabel('No. epoch')
+  plt.legend(loc="upper left")
+  plt.show()
