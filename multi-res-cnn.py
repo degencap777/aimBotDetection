@@ -24,7 +24,7 @@ def video_to_array(video_name: str, no_frames=10, flip=False):
   for i in range(no_frames):
     clip.set(cv2.CAP_PROP_POS_FRAMES, frames[i])
     ret, frame = clip.read()
-    frame = cv2.resize(frame, (32, 32))
+    # frame = cv2.resize(frame, (32, 32))
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     if flip:
       frame = cv2.flip(frame, 1)
@@ -81,8 +81,8 @@ if not args.test:
 
   X_train_context = np.array(X_train_context).transpose((0, 2, 3, 1))
   X_train_fovea = np.array(X_train_fovea).transpose((0, 2, 3, 1))
-  X_train_context = X_train_context.reshape((X_train_context.shape[0], 32, 32, 10, 1))
-  X_train_fovea = X_train_fovea.reshape((X_train_fovea.shape[0], 32, 32, 10, 1))
+  X_train_context = X_train_context.reshape((X_train_context.shape[0], 88, 88, 10, 1))
+  X_train_fovea = X_train_fovea.reshape((X_train_fovea.shape[0], 88, 88, 10, 1))
   X_train_context = X_train_context.astype("float32")
   X_train_fovea = X_train_fovea.astype("float32")
   Y_train = to_categorical(labels_train[:len(labels_train)//2], 2)
@@ -112,8 +112,8 @@ progress_bar.close()
 
 X_test_context = np.array(X_test_context).transpose((0, 2, 3, 1))
 X_test_fovea = np.array(X_test_fovea).transpose((0, 2, 3, 1))
-X_test_context = X_test_context.reshape((X_test_context.shape[0], 32, 32, 10, 1))
-X_test_fovea = X_test_fovea.reshape((X_test_fovea.shape[0], 32, 32, 10, 1))
+X_test_context = X_test_context.reshape((X_test_context.shape[0], 88, 88, 10, 1))
+X_test_fovea = X_test_fovea.reshape((X_test_fovea.shape[0], 88, 88, 10, 1))
 X_test_context = X_test_context.astype("float32")
 X_test_fovea = X_test_fovea.astype("float32")
 Y_test = to_categorical(labels_test[:len(labels_test)//2], 2)
@@ -125,24 +125,24 @@ input_shape = X_train_context.shape[1:] if len(X_train_context) else X_test_cont
 # Create the model
 # input context stream
 visible1 = Input(shape=input_shape)
-conv11 = Conv3D(32, kernel_size=(3, 3, 3), strides=(2, 2, 2), activation='relu', kernel_initializer='he_uniform')(visible1)
+conv11 = Conv3D(32, kernel_size=(3, 3, 3), activation='relu', kernel_initializer='he_uniform')(visible1)
 pool11 = MaxPooling3D(pool_size=(2, 2, 2), padding="same")(conv11)
-conv12 = Conv3D(256, kernel_size=(3, 3, 3), activation='relu', padding="same")(pool11)
+conv12 = Conv3D(32, kernel_size=(3, 3, 3), strides=(2, 2, 2), activation='relu', padding="same")(pool11)
 pool12 = MaxPooling3D(pool_size=(2, 2, 2), padding="same")(conv12)
-conv13 = Conv3D(256, kernel_size=(3, 3, 3), activation='relu', padding="same")(pool12)
+conv13 = Conv3D(64, kernel_size=(3, 3, 3), activation='relu', padding="same")(pool12)
 flat1 = Flatten()(conv13)
 # input fovea stream
 visible2 = Input(shape=input_shape)
-conv21 = Conv3D(32, kernel_size=(3, 3, 3), strides=(2, 2, 2), activation='relu', kernel_initializer='he_uniform')(visible2)
+conv21 = Conv3D(32, kernel_size=(3, 3, 3), activation='relu', kernel_initializer='he_uniform')(visible2)
 pool21 = MaxPooling3D(pool_size=(2, 2, 2), padding="same")(conv21)
-conv22 = Conv3D(256, kernel_size=(3, 3, 3), activation='relu', padding="same")(pool21)
+conv22 = Conv3D(32, kernel_size=(3, 3, 3), strides=(2, 2, 2), activation='relu', padding="same")(pool21)
 pool22 = MaxPooling3D(pool_size=(2, 2, 2), padding="same")(conv22)
-conv23 = Conv3D(256, kernel_size=(3, 3, 3), activation='relu', padding="same")(pool22)
+conv23 = Conv3D(64, kernel_size=(3, 3, 3), activation='relu', padding="same")(pool22)
 flat2 = Flatten()(conv23)
 # merge input models
 merge = concatenate([flat1, flat2])
 # interpretation model
-hidden1 = Dense(512, activation='relu')(merge)
+hidden1 = Dense(10, activation='relu')(merge)
 hidden2 = Dense(10, activation='relu')(hidden1)
 output = Dense(no_classes, activation='softmax')(hidden2)
 model = Model(inputs=[visible1, visible2], outputs=output)
