@@ -56,30 +56,31 @@ learning_rate = 0.001
 no_classes = 2
 verbosity = 1
 
-X_train = []
-labels_train = []
-train_files = os.listdir("dataset_processed/train/")
+if not args.test:
+  X_train = []
+  labels_train = []
+  train_files = os.listdir("dataset_processed/train/")
 
-progress_bar = tqdm(total=len(train_files))
+  progress_bar = tqdm(total=len(train_files))
 
-for filename in train_files:
-  progress_bar.update(1)
-  if filename.endswith("-context.mp4"):
-    continue
-  file_path = os.path.join("dataset_processed/train/", filename)
-  label = 1 if filename.startswith("cheater") else 0
+  for filename in train_files:
+    progress_bar.update(1)
+    if filename.endswith("-context.mp4"):
+      continue
+    file_path = os.path.join("dataset_processed/train/", filename)
+    label = 1 if filename.startswith("cheater") else 0
 
-  labels_train.append(label)
-  X_train.append(video_to_array(file_path))
+    labels_train.append(label)
+    X_train.append(video_to_array(file_path))
 
-progress_bar.close()
+  progress_bar.close()
 
-X_train = np.array(X_train).transpose((0, 2, 3, 1))
-X_train = X_train.reshape((X_train.shape[0], 32, 32, 10, 1))
-X_train = X_train.astype("float32")
-Y_train = to_categorical(labels_train, 2)
+  X_train = np.array(X_train).transpose((0, 2, 3, 1))
+  X_train = X_train.reshape((X_train.shape[0], 32, 32, 10, 1))
+  X_train = X_train.astype("float32")
+  Y_train = to_categorical(labels_train, 2)
 
-print('X_shape:{}\nY_shape:{}'.format(X_train.shape, Y_train.shape))
+  print('X_shape:{}\nY_shape:{}'.format(X_train.shape, Y_train.shape))
 
 X_test = []
 labels_test = []
@@ -106,10 +107,12 @@ Y_test = to_categorical(labels_test, 2)
 
 print('X_shape:{}\nY_shape:{}'.format(X_test.shape, Y_test.shape))
 
+input_shape = X_train.shape[1:] if X_train else X_test.shape[1:]
+
 # Create the model
 model = Sequential()
 model.add(Conv3D(32, kernel_size=(3, 3, 3), activation='relu', kernel_initializer='he_uniform',
-  input_shape=(X_train.shape[1:]), padding="same"))
+  input_shape=(input_shape), padding="same"))
 model.add(Conv3D(32, kernel_size=(3, 3, 3), activation='softmax', padding="same"))
 model.add(MaxPooling3D(pool_size=(3, 3, 3), padding="same"))
 model.add(Dropout(0.25))
