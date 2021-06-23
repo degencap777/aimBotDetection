@@ -21,7 +21,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-def video_to_array(video_name: str, no_frames=10):
+def video_to_array(video_name: str, no_frames=10, flip=False):
   array_video = []
   clip = cv2.VideoCapture(video_name)
   nframe = clip.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -32,6 +32,8 @@ def video_to_array(video_name: str, no_frames=10):
     ret, frame = clip.read()
     frame = cv2.resize(frame, (32, 32))
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    if flip:
+      frame = cv2.flip(frame, 1)
     array_video.append(frame)
 
   clip.release()
@@ -74,6 +76,8 @@ if not args.test:
 
     labels_train.append(label)
     X_train.append(video_to_array(file_path))
+    labels_train.append(label)
+    X_train.append(video_to_array(file_path, flip=True))
 
   progress_bar.close()
 
