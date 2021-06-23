@@ -53,7 +53,8 @@ learning_rate = 0.001
 no_classes = 2
 verbosity = 1
 
-X_train = []
+X_train_context = []
+X_train_fovea = []
 labels_train = []
 
 if not args.test:
@@ -63,26 +64,33 @@ if not args.test:
 
   for filename in train_files:
     progress_bar.update(1)
-    if filename.endswith("-context.mp4"):
-      continue
+    
     file_path = os.path.join("dataset_processed/train/", filename)
     label = 1 if filename.startswith("cheater") else 0
 
     labels_train.append(label)
-    X_train.append(video_to_array(file_path))
+    if filename.endswith("-context.mp4"):
+      X_train_context.append(video_to_array(file_path))
+    else:
+      X_train_fovea.append(video_to_array(file_path))
+    
     # labels_train.append(label)
     # X_train.append(video_to_array(file_path, flip=True))
 
   progress_bar.close()
 
-  X_train = np.array(X_train).transpose((0, 2, 3, 1))
-  X_train = X_train.reshape((X_train.shape[0], 32, 32, 10, 1))
-  X_train = X_train.astype("float32")
-  Y_train = to_categorical(labels_train, 2)
+  X_train_context = np.array(X_train_context).transpose((0, 2, 3, 1))
+  X_train_fovea = np.array(X_train_fovea).transpose((0, 2, 3, 1))
+  X_train_context = X_train_context.reshape((X_train_context.shape[0], 32, 32, 10, 1))
+  X_train_fovea = X_train_fovea.reshape((X_train_fovea.shape[0], 32, 32, 10, 1))
+  X_train_context = X_train_context.astype("float32")
+  X_train_fovea = X_train_fovea.astype("float32")
+  Y_train = to_categorical(labels_train[:len(labels_train)//2], 2)
 
-  print('X_shape:{}\nY_shape:{}'.format(X_train.shape, Y_train.shape))
+  print('X_shape:{}\nY_shape:{}'.format(X_train_context.shape, Y_train.shape))
 
-X_test = []
+X_test_context = []
+X_test_fovea = []
 labels_test = []
 test_files = os.listdir("dataset_processed/test/")
 
@@ -90,44 +98,51 @@ progress_bar = tqdm(total=len(test_files))
 
 for filename in test_files:
   progress_bar.update(1)
-  if filename.endswith("-context.mp4"):
-    continue
+
   file_path = os.path.join("dataset_processed/test/", filename)
   label = 1 if filename.startswith("cheater") else 0
 
   labels_test.append(label)
-  X_test.append(video_to_array(file_path))
+  if filename.endswith("-context.mp4"):
+    X_test_context.append(video_to_array(file_path))
+  else:
+    X_test_fovea.append(video_to_array(file_path))
 
 progress_bar.close()
 
-X_test = np.array(X_test).transpose((0, 2, 3, 1))
-X_test = X_test.reshape((X_test.shape[0], 32, 32, 10, 1))
-X_test = X_test.astype("float32")
-Y_test = to_categorical(labels_test, 2)
+X_test_context = np.array(X_test_context).transpose((0, 2, 3, 1))
+X_test_fovea = np.array(X_test_fovea).transpose((0, 2, 3, 1))
+X_test_context = X_test_context.reshape((X_test_context.shape[0], 32, 32, 10, 1))
+X_test_fovea = X_test_fovea.reshape((X_test_fovea.shape[0], 32, 32, 10, 1))
+X_test_context = X_test_context.astype("float32")
+X_test_fovea = X_test_fovea.astype("float32")
+Y_test = to_categorical(labels_test[:len(labels_test)//2], 2)
 
-print('X_shape:{}\nY_shape:{}'.format(X_test.shape, Y_test.shape))
+print('X_shape:{}\nY_shape:{}'.format(X_test_context.shape, Y_test.shape))
 
-input_shape = X_train.shape[1:] if len(X_train) else X_test.shape[1:]
+input_shape = X_train_context.shape[1:] if len(X_train_context) else X_test_context.shape[1:]
 
 # Create the model
 # input context stream
 visible1 = Input(shape=input_shape)
-conv11 = Conv3D(32, kernel_size=(3, 3, 3), activation='relu', kernel_initializer='he_uniform')(visible1)
+conv11 = Conv3D(32, kernel_size=(3, 3, 3), strides=(2, 2, 2), activation='relu', kernel_initializer='he_uniform')(visible1)
 pool11 = MaxPooling3D(pool_size=(2, 2, 2), padding="same")(conv11)
-conv12 = Conv3D(16, kernel_size=(3, 3, 3), activation='relu', padding="same")(pool11)
+conv12 = Conv3D(256, kernel_size=(3, 3, 3), activation='relu', padding="same")(pool11)
 pool12 = MaxPooling3D(pool_size=(2, 2, 2), padding="same")(conv12)
-flat1 = Flatten()(pool12)
+conv13 = Conv3D(256, kernel_size=(3, 3, 3), activation='relu', padding="same")(pool12)
+flat1 = Flatten()(conv13)
 # input fovea stream
 visible2 = Input(shape=input_shape)
-conv21 = Conv3D(32, kernel_size=(3, 3, 3), activation='relu', kernel_initializer='he_uniform')(visible2)
+conv21 = Conv3D(32, kernel_size=(3, 3, 3), strides=(2, 2, 2), activation='relu', kernel_initializer='he_uniform')(visible2)
 pool21 = MaxPooling3D(pool_size=(2, 2, 2), padding="same")(conv21)
-conv22 = Conv3D(16, kernel_size=(3, 3, 3), activation='relu', padding="same")(pool21)
+conv22 = Conv3D(256, kernel_size=(3, 3, 3), activation='relu', padding="same")(pool21)
 pool22 = MaxPooling3D(pool_size=(2, 2, 2), padding="same")(conv22)
-flat2 = Flatten()(pool22)
+conv23 = Conv3D(256, kernel_size=(3, 3, 3), activation='relu', padding="same")(pool22)
+flat2 = Flatten()(conv23)
 # merge input models
 merge = concatenate([flat1, flat2])
 # interpretation model
-hidden1 = Dense(10, activation='relu')(merge)
+hidden1 = Dense(512, activation='relu')(merge)
 hidden2 = Dense(10, activation='relu')(hidden1)
 output = Dense(no_classes, activation='softmax')(hidden2)
 model = Model(inputs=[visible1, visible2], outputs=output)
@@ -141,34 +156,34 @@ plot_model(model, show_shapes=True,
             to_file=os.path.join('multi-res-cnn-model.png'))
 
 # Load weights if provided
-# if args.load is not False:
-#   model.load_weights(args.load)
-# # Fit data to model
-# if not args.test:
-#   history = model.fit(X_train, Y_train,
-#               validation_data=(X_test, Y_test),
-#               batch_size=batch_size,
-#               epochs=no_epochs,
-#               verbose=verbosity,
-#               shuffle=True)
+if args.load is not False:
+  model.load_weights(args.load)
+# Fit data to model
+if not args.test:
+  history = model.fit([X_train_context, X_train_fovea], Y_train,
+              validation_data=([X_test_context, X_test_fovea], Y_test),
+              batch_size=batch_size,
+              epochs=no_epochs,
+              verbose=verbosity,
+              shuffle=True)
 
-# # # Generate generalization metrics
-# loss, acc = model.evaluate(X_test, Y_test, verbose=0)
-# print('Test loss:', loss)
-# print('Test accuracy:', acc)
+# # Generate generalization metrics
+loss, acc = model.evaluate([X_test_context, X_test_fovea], Y_test, verbose=0)
+print('Test loss:', loss)
+print('Test accuracy:', acc)
 
-# if not os.path.isdir(args.output):
-#   os.mkdir(args.output)
-# if not args.test:
-#   model.save_weights(os.path.join(args.output, "multi-res-cnn-{0}-{1}-acc-{2}.h5".format(batch_size, no_epochs, round(acc, 2))))
+if not os.path.isdir(args.output):
+  os.mkdir(args.output)
+if not args.test:
+  model.save_weights(os.path.join(args.output, "multi-res-cnn-{0}-{1}-acc-{2}.h5".format(batch_size, no_epochs, round(acc, 2))))
 
-#   # # Plot history: Categorical crossentropy & Accuracy
-#   plt.plot(history.history['loss'], label='Categorical crossentropy (training data)')
-#   plt.plot(history.history['val_loss'], label='Categorical crossentropy (validation data)')
-#   plt.plot(history.history['accuracy'], label='Accuracy (training data)')
-#   plt.plot(history.history['val_accuracy'], label='Accuracy (validation data)')
-#   plt.title('Model performance for Conv3D for aimbot detection')
-#   plt.ylabel('Loss value')
-#   plt.xlabel('No. epoch')
-#   plt.legend(loc="upper left")
-#   plt.show()
+  # # Plot history: Categorical crossentropy & Accuracy
+  plt.plot(history.history['loss'], label='Categorical crossentropy (training data)')
+  plt.plot(history.history['val_loss'], label='Categorical crossentropy (validation data)')
+  plt.plot(history.history['accuracy'], label='Accuracy (training data)')
+  plt.plot(history.history['val_accuracy'], label='Accuracy (validation data)')
+  plt.title('Model performance for Conv3D for aimbot detection')
+  plt.ylabel('Loss value')
+  plt.xlabel('No. epoch')
+  plt.legend(loc="upper left")
+  plt.show()
