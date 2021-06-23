@@ -128,12 +128,13 @@ model.summary()
 plot_model(model, show_shapes=True,
             to_file=os.path.join('model.png'))
 # Fit data to model
-history = model.fit(X_train, Y_train,
-            validation_data=(X_test, Y_test),
-            batch_size=batch_size,
-            epochs=no_epochs,
-            verbose=verbosity,
-            shuffle=True)
+if not args.test:
+  history = model.fit(X_train, Y_train,
+              validation_data=(X_test, Y_test),
+              batch_size=batch_size,
+              epochs=no_epochs,
+              verbose=verbosity,
+              shuffle=True)
 
 # # Generate generalization metrics
 loss, acc = model.evaluate(X_test, Y_test, verbose=0)
