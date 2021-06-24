@@ -75,11 +75,16 @@ if not args.test:
     file_path = os.path.join("dataset_processed/train/", filename)
     label = 1 if filename.startswith("cheater") else 0
 
-    labels_train.append(label)
+    # labels_train.append(label)
+    
     if filename.endswith("-context.mp4"):
+      labels_train.append(label)
       X_train_context.append(video_to_array(file_path))
+      labels_train.append(label)
+      X_train_context.append(video_to_array(file_path, flip=True))
     else:
       X_train_fovea.append(video_to_array(file_path))
+      X_train_fovea.append(video_to_array(file_path, flip=True))
     
     # labels_train.append(label)
     # X_train.append(video_to_array(file_path, flip=True))
