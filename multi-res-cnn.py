@@ -3,6 +3,7 @@
 '''
 import argparse
 import os
+import random
 import cv2
 from tensorflow import keras
 from tensorflow.keras.models import Model
@@ -47,7 +48,7 @@ if args.test is True and not args.load:
 
 # -- Preparatory code --
 # Model configuration
-batch_size = 100
+batch_size = 80
 no_epochs = args.epochs
 learning_rate = 0.00001
 no_classes = 2
@@ -57,8 +58,14 @@ X_train_context = []
 X_train_fovea = []
 labels_train = []
 
+X_val_context = []
+X_val_fovea = []
+labels_val = []
+
 if not args.test:
   train_files = os.listdir("dataset_processed/train/")
+  validation_files = random.sample(train_files, len(train_files)*0.2)
+  train_files = [file for file in train_files if file not in validation_files]
 
   progress_bar = tqdm(total=len(train_files))
 
@@ -88,6 +95,32 @@ if not args.test:
   Y_train = to_categorical(labels_train[:len(labels_train)//2], 2)
 
   print('X_shape:{}\nY_shape:{}'.format(X_train_context.shape, Y_train.shape))
+
+  progress_bar = tqdm(total=len(validation_files))
+
+  for filename in validation_files:
+    progress_bar.update(1)
+    
+    file_path = os.path.join("dataset_processed/train/", filename)
+    label = 1 if filename.startswith("cheater") else 0
+
+    labels_train.append(label)
+    if filename.endswith("-context.mp4"):
+      X_val_context.append(video_to_array(file_path))
+    else:
+      X_val_fovea.append(video_to_array(file_path))
+
+  progress_bar.close()
+
+  X_val_context = np.array(X_val_context).transpose((0, 2, 3, 1))
+  X_val_fovea = np.array(X_val_fovea).transpose((0, 2, 3, 1))
+  X_val_context = X_val_context.reshape((X_val_context.shape[0], 88, 88, 10, 1))
+  X_val_fovea = X_val_fovea.reshape((X_val_fovea.shape[0], 88, 88, 10, 1))
+  X_val_context = X_val_context.astype("float32")
+  X_val_fovea = X_val_fovea.astype("float32")
+  Y_val = to_categorical(labels_val[:len(labels_val)//2], 2)
+
+  print('X_shape:{}\nY_shape:{}'.format(X_val_context.shape, Y_val.shape))
 
 X_test_context = []
 X_test_fovea = []
@@ -127,22 +160,24 @@ input_shape = X_train_context.shape[1:] if len(X_train_context) else X_test_cont
 visible1 = Input(shape=input_shape)
 conv11 = Conv3D(16, kernel_size=(3, 3, 3), activation='relu', kernel_initializer='he_uniform',
   padding="same")(visible1)
-pool12 = MaxPooling3D(pool_size=(3, 3, 3), padding="same")(conv11)
+pool12 = MaxPooling3D(pool_size=(3, 3, 3))(conv11)
 drop1 = Dropout(0.25)(pool12)
-flat1 = Flatten()(drop1)
+conv12 = Conv3D(32, kernel_size=(3, 3, 3), strides=(3, 3, 3), activation='softmax', padding="same")(drop1)
+flat1 = Flatten()(conv12)
 # input fovea stream
 visible2 = Input(shape=input_shape)
 conv21 = Conv3D(16, kernel_size=(3, 3, 3), activation='relu', kernel_initializer='he_uniform',
   padding="same")(visible2)
-pool22 = MaxPooling3D(pool_size=(3, 3, 3), padding="same")(conv21)
+pool22 = MaxPooling3D(pool_size=(3, 3, 3))(conv21)
 drop2 = Dropout(0.25)(pool22)
-flat2 = Flatten()(drop2)
+conv22 = Conv3D(32, kernel_size=(3, 3, 3), strides=(3, 3, 3), activation='softmax', padding="same")(drop2)
+flat2 = Flatten()(conv22)
 # merge input models
 merge = concatenate([flat1, flat2])
 # interpretation model
 hidden1 = Dense(10, activation='sigmoid')(merge)
-hidden2 = Dense(10, activation='relu')(hidden1)
-output = Dense(no_classes, activation='softmax')(hidden2)
+# hidden2 = Dense(10, activation='relu')(hidden1)
+output = Dense(no_classes, activation='softmax')(hidden1)
 model = Model(inputs=[visible1, visible2], outputs=output)
 
 # Compile the model
@@ -159,7 +194,7 @@ if args.load is not False:
 # Fit data to model
 if not args.test:
   history = model.fit([X_train_context, X_train_fovea], Y_train,
-              validation_data=([X_test_context, X_test_fovea], Y_test),
+              validation_data=([X_val_context, X_val_fovea], Y_val),
               batch_size=batch_size,
               epochs=no_epochs,
               verbose=verbosity,
