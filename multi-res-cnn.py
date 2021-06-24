@@ -4,6 +4,7 @@
 import argparse
 import os
 import random
+import math
 import cv2
 from tensorflow import keras
 from tensorflow.keras.models import Model
@@ -14,6 +15,7 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.utils import plot_model
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.cbook import flatten
 from tqdm import tqdm
 
 def video_to_array(video_name: str, no_frames=10, flip=False):
@@ -64,30 +66,44 @@ labels_val = []
 
 if not args.test:
   train_files = os.listdir("dataset_processed/train/")
-  validation_files = random.sample(train_files, len(train_files)*0.2)
+  validation_files = random.sample(train_files, math.floor(len(train_files)*0.2))
   train_files = [file for file in train_files if file not in validation_files]
 
   progress_bar = tqdm(total=len(train_files))
 
-  for filename in train_files:
+  train_files = list(zip(train_files[::2], train_files[1::2]))
+
+  for filename1, filename2 in train_files:
     progress_bar.update(1)
     
-    file_path = os.path.join("dataset_processed/train/", filename)
-    label = 1 if filename.startswith("cheater") else 0
+    file_path1 = os.path.join("dataset_processed/train/", filename1)
+    file_path2 = os.path.join("dataset_processed/train/", filename2)
+    label = 1 if filename1.startswith("cheater") else 0
 
-    # labels_train.append(label)
+    labels_train.append(label)
     
-    if filename.endswith("-context.mp4"):
-      labels_train.append(label)
-      X_train_context.append(video_to_array(file_path))
-      labels_train.append(label)
-      X_train_context.append(video_to_array(file_path, flip=True))
+    if filename1.endswith("-context.mp4"):
+      X_train_context.append(video_to_array(file_path1))
+      X_train_fovea.append(video_to_array(file_path2))
     else:
-      X_train_fovea.append(video_to_array(file_path))
-      X_train_fovea.append(video_to_array(file_path, flip=True))
+      X_train_context.append(video_to_array(file_path2))
+      X_train_fovea.append(video_to_array(file_path1))
+  
+  for filename1, filename2 in train_files:
+    progress_bar.update(1)
     
-    # labels_train.append(label)
-    # X_train.append(video_to_array(file_path, flip=True))
+    file_path1 = os.path.join("dataset_processed/train/", filename1)
+    file_path2 = os.path.join("dataset_processed/train/", filename2)
+    label = 1 if filename1.startswith("cheater") else 0
+
+    labels_train.append(label)
+    
+    if filename1.endswith("-context.mp4"):
+      X_train_context.append(video_to_array(file_path1, flip=True))
+      X_train_fovea.append(video_to_array(file_path2, flip=True))
+    else:
+      X_train_context.append(video_to_array(file_path2, flip=True))
+      X_train_fovea.append(video_to_array(file_path1, flip=True))
 
   progress_bar.close()
 
@@ -97,23 +113,29 @@ if not args.test:
   X_train_fovea = X_train_fovea.reshape((X_train_fovea.shape[0], 88, 88, 10, 1))
   X_train_context = X_train_context.astype("float32")
   X_train_fovea = X_train_fovea.astype("float32")
-  Y_train = to_categorical(labels_train[:len(labels_train)//2], 2)
+  Y_train = to_categorical(labels_train, 2)
 
   print('X_shape:{}\nY_shape:{}'.format(X_train_context.shape, Y_train.shape))
 
-  progress_bar = tqdm(total=len(validation_files))
+  progress_bar = tqdm(total=len(validation_files)//2)
 
-  for filename in validation_files:
+  validation_files = list(zip(validation_files[::2], validation_files[1::2]))
+
+  for filename1, filename2 in validation_files:
     progress_bar.update(1)
     
-    file_path = os.path.join("dataset_processed/train/", filename)
-    label = 1 if filename.startswith("cheater") else 0
+    file_path1 = os.path.join("dataset_processed/train/", filename1)
+    file_path2 = os.path.join("dataset_processed/train/", filename2)
+    label = 1 if filename1.startswith("cheater") else 0
 
-    labels_train.append(label)
-    if filename.endswith("-context.mp4"):
-      X_val_context.append(video_to_array(file_path))
+    labels_val.append(label)
+    
+    if filename1.endswith("-context.mp4"):
+      X_val_context.append(video_to_array(file_path1))
+      X_val_fovea.append(video_to_array(file_path2))
     else:
-      X_val_fovea.append(video_to_array(file_path))
+      X_val_context.append(video_to_array(file_path2))
+      X_val_fovea.append(video_to_array(file_path1))
 
   progress_bar.close()
 
@@ -123,7 +145,7 @@ if not args.test:
   X_val_fovea = X_val_fovea.reshape((X_val_fovea.shape[0], 88, 88, 10, 1))
   X_val_context = X_val_context.astype("float32")
   X_val_fovea = X_val_fovea.astype("float32")
-  Y_val = to_categorical(labels_val[:len(labels_val)//2], 2)
+  Y_val = to_categorical(labels_val, 2)
 
   print('X_shape:{}\nY_shape:{}'.format(X_val_context.shape, Y_val.shape))
 
