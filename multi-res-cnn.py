@@ -66,12 +66,11 @@ labels_val = []
 
 if not args.test:
   train_files = os.listdir("dataset_processed/train/")
+  train_files = list(zip(train_files[::2], train_files[1::2]))
   validation_files = random.sample(train_files, math.floor(len(train_files)*0.2))
   train_files = [file for file in train_files if file not in validation_files]
 
-  progress_bar = tqdm(total=len(train_files))
-
-  train_files = list(zip(train_files[::2], train_files[1::2]))
+  progress_bar = tqdm(total=len(train_files)*2)
 
   for filename1, filename2 in train_files:
     progress_bar.update(1)
@@ -117,9 +116,7 @@ if not args.test:
 
   print('X_shape:{}\nY_shape:{}'.format(X_train_context.shape, Y_train.shape))
 
-  progress_bar = tqdm(total=len(validation_files)//2)
-
-  validation_files = list(zip(validation_files[::2], validation_files[1::2]))
+  progress_bar = tqdm(total=len(validation_files))
 
   for filename1, filename2 in validation_files:
     progress_bar.update(1)
@@ -189,7 +186,9 @@ conv11 = Conv3D(16, kernel_size=(3, 3, 3), activation='relu', kernel_initializer
   padding="same")(visible1)
 pool12 = MaxPooling3D(pool_size=(3, 3, 3))(conv11)
 drop1 = Dropout(0.25)(pool12)
+# relu
 conv12 = Conv3D(32, kernel_size=(3, 3, 3), strides=(3, 3, 3), activation='softmax', padding="same")(drop1)
+# softmax
 flat1 = Flatten()(conv12)
 # input fovea stream
 visible2 = Input(shape=input_shape)
